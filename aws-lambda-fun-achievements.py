@@ -40,6 +40,28 @@ def lambda_handler(event, context):
     #calling create_access_token function 
     result = create_access_token(
         YOUR_CLIENT_ID, YOUR_CLIENT_SECRET, region, realmSlug, characterName)
+    
+    #initialize list of levels which are compeleted by player.
+    list_is_completed = []
+    
+    #filtering list of levels which are compeleted by player.
+    for i in result['achievements']:
+      if 'criteria' in i.keys() and 'is_completed' in i['criteria'] and i['criteria']['is_completed']== True:
+        data={}
+        data['achievement']= i['achievement']
+        data['achievement']['completed_timestamp']=i['completed_timestamp']
+        data['completed_timestamp']=i['completed_timestamp']
+        list_is_completed.append(data)
+
+    # current level filtering out from list of levels which are compeleted by player using completed_timestamp
+    sorted_list_is_completed = sorted(list_is_completed, key=lambda k: k['achievement']['completed_timestamp']) 
+    # current level 
+    current_level = sorted_list_is_completed[-1]
+    # current level completed_timestamp convert to string
+    completed_Ondate = str(datetime.datetime.fromtimestamp(
+    current_level['achievement']['completed_timestamp'] / 1e3))
+
+
     # table attributes     
     # trans = {}
     # trans['playerName'] = 'sicarious'
@@ -52,8 +74,14 @@ def lambda_handler(event, context):
     # insert a data in dynamodb table
     # response = table.put_item(Item=trans)
     # TODO implement
+    
+    
+    
     return {
         'statusCode': 200,
-        'body': json.dumps(result['achievements'])
-
+        'list_of_completed_achievement': json.dumps(list_is_completed),
+        'last_level_completed': json.dumps(current_level['achievement']['name']),
+        'last_level_completed_Ondate':json.dumps(completed_Ondate),
+        'total_points':json.dumps(result['total_points']),
+        'total_quantity':json.dumps(result['total_quantity'])
     }
